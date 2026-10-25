@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NALL PANEL V3 - Cyber Auto-Report & Owner Suite</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Custom Cyberpunk Purple/Neon Styling -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        :root {
+            --bg-color: #040209;
+            --purple-glow: rgba(168, 85, 247, 0.5);
+            --blue-glow: rgba(59, 130, 246, 0.5);
+            --gold-glow: rgba(234, 179, 8, 0.5);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-color);
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        .font-mono-code {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Cyber Neon Effects */
+        .glow-purple { box-shadow: 0 0 25px var(--purple-glow); }
+        .glow-blue { box-shadow: 0 0 25px var(--blue-glow); }
+        .glow-gold { box-shadow: 0 0 25px var(--gold-glow); }
+        .text-glow { text-shadow: 0 0 10px rgba(192, 132, 252, 0.8); }
+        .text-glow-blue { text-shadow: 0 0 10px rgba(96, 165, 250, 0.8); }
+
+        /* Glassmorphism Cards */
+        .glass-card {
+            background: linear-gradient(135deg, rgba(20, 12, 34, 0.85) 0%, rgba(10, 6, 18, 0.95) 100%);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(168, 85, 247, 0.25);
+        }
+        .glass-card:hover {
+            border-color: rgba(168, 85, 247, 0.5);
+        }
+
+        .glass-card-owner {
+            background: linear-gradient(135deg, rgba(38, 24, 8, 0.85) 0%, rgba(15, 10, 4, 0.95) 100%);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(234, 179, 8, 0.35);
+        }
+
+        /* Animated Border Light */
+        @keyframes borderRotate {
+            0% { border-color: rgba(168, 85, 247, 0.8); }
+            50% { border-color: rgba(59, 130, 246, 0.8); }
+            100% { border-color: rgba(168, 85, 247, 0.8); }
+        }
+        .animated-border {
+            animation: borderRotate 3s infinite linear;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #040209; }
+        ::-webkit-scrollbar-thumb { background: #4c1d95; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6d28d9; }
+
+        /* Background Particle Canvas */
+        #auraCanvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.65;
+        }
+
+        /* Typing & Spinner FX */
+        .typing-cursor::after {
+            content: '|';
+            animation: blink 0.8s infinite;
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        @keyframes pulseGlow {
+            0%, 100% { filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.8)); }
+            50% { filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.9)); }
+        }
+        .pulse-glow-fx { animation: pulseGlow 2s infinite ease-in-out; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between select-none relative pb-20 md:pb-0">
+
+    <!-- Background Canvas -->
+    <canvas id="auraCanvas"></canvas>
+
+    <!-- Main Container Frame -->
+    <div class="relative z-10 max-w-md mx-auto w-full min-h-screen flex flex-col bg-[#06030e]/95 border-x border-purple-900/30 shadow-2xl">
+        
+        <!-- Header / Top Navigation -->
+        <header id="mainHeader" class="sticky top-0 z-30 bg-[#070414]/90 backdrop-blur-md border-b border-purple-900/40 p-3.5 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <button id="backBtn" class="hidden text-purple-300 hover:text-white transition-colors">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </button>
+                <div class="flex items-center gap-2">
+                    <div class="p-1.5 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-600 shadow-lg shadow-purple-500/30">
+                        <i data-lucide="zap" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <div>
+                        <span class="font-black text-lg tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-purple-300 via-blue-200 to-purple-400">
+                            NALL PANEL <span class="text-xs text-cyan-400 font-bold border border-cyan-500/30 px-1.5 py-0.5 rounded-full ml-0.5">V3</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <!-- Bot Connection Status -->
+                <div id="botStatusIndicator" class="flex items-center gap-1.5 bg-emerald-950/80 border border-emerald-500/40 px-2.5 py-1 rounded-full text-[10px] font-bold text-emerald-400">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span id="botStatusText">BOT: ONLINE</span>
+                </div>
+                
+                <button onclick="switchTab('pengaturan')" class="text-purple-300 hover:text-white p-1">
+                    <i data-lucide="settings" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN VIEW CONTENT -->
+        <main id="appContent" class="flex-1 p-4 overflow-y-auto relative">
+
+            <!-- 1. LOGIN SCREEN -->
+            <section id="view-login" class="hidden flex flex-col items-center justify-center text-center py-4 space-y-5">
+                <div class="relative">
+                    <div class="w-36 h-36 rounded-full bg-purple-600/20 absolute -inset-2 blur-2xl animate-pulse"></div>
+                    <div class="w-32 h-32 rounded-3xl bg-gradient-to-tr from-purple-950 via-indigo-950 to-slate-950 border border-purple-500/40 flex items-center justify-center relative shadow-2xl overflow-hidden group">
+                        <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400" 
+                             alt="NALL V3 Visual" 
+                             class="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform duration-500"
+                             onerror="this.src='https://placehold.co/400x400/2a085c/ffffff?text=NALL+V3'">
+                        <div class="absolute inset-0 bg-gradient-to-t from-[#06030e] via-transparent to-transparent"></div>
+                        <i data-lucide="shield-check" class="w-12 h-12 text-purple-400 absolute stroke-[1.5]"></i>
+                    </div>
+                </div>
+
+                <div class="space-y-1 px-4">
+                    <h1 class="text-2xl font-black text-white tracking-wide">NALL PANEL V3 AUTO-REPORT</h1>
+                    <p class="text-xs text-purple-300/80 max-w-xs mx-auto">
+                        Sistem Manajemen & Pengujian WA Terintegrasi Laporan Bot Otomatis.
+                    </p>
+                </div>
+
+                <!-- Login Card -->
+                <div class="glass-card p-5 rounded-2xl w-full space-y-4 text-left">
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-purple-200 flex items-center gap-1.5">
+                            <i data-lucide="user" class="w-3.5 h-3.5 text-purple-400"></i> ID Username
+                        </label>
+                        <input type="text" id="loginUsername" placeholder="Masukkan username" class="w-full px-4 py-3 rounded-xl bg-purple-950/60 border border-purple-800/50 text-white placeholder-purple-400/40 text-xs focus:outline-none focus:border-purple-500">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-purple-200 flex items-center gap-1.5">
+                            <i data-lucide="key" class="w-3.5 h-3.5 text-purple-400"></i> Kata Sandi / Passcode
+                        </label>
+                        <input type="password" id="loginPassword" placeholder="Masukkan password" class="w-full px-4 py-3 rounded-xl bg-purple-950/60 border border-purple-800/50 text-white placeholder-purple-400/40 text-xs focus:outline-none focus:border-purple-500">
+                    </div>
+
+                    <button onclick="handleLogin()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white font-bold text-xs shadow-lg shadow-purple-600/30 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="log-in" class="w-4 h-4"></i> Masuk Sistem V3
+                    </button>
+
+                    <button onclick="loginAsGuest()" class="w-full py-2.5 rounded-xl bg-purple-950/40 border border-purple-800/40 text-purple-300 text-xs font-medium hover:bg-purple-900/40 transition-all flex items-center justify-center gap-1.5">
+                        <i data-lucide="user-check" class="w-4 h-4"></i> Akses Mode Guest (Free)
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- 2. BERANDA DASHBOARD -->
+            <section id="view-beranda" class="space-y-4">
+                <!-- User Profile Card -->
+                <div class="glass-card p-4 rounded-2xl flex items-center justify-between relative overflow-hidden">
+                    <div class="flex items-center gap-3 relative z-10">
+                        <div class="relative">
+                            <img id="userAvatarImg" 
+                                 src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150" 
+                                 alt="User Profile" 
+                                 class="w-12 h-12 rounded-full border-2 border-purple-400/50 object-cover shadow-md"
+                                 onerror="this.src='https://placehold.co/150x150/4c1d95/ffffff?text=USER'">
+                            <span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#06030e]"></span>
+                        </div>
+                        <div>
+                            <h3 id="currentUserName" class="font-bold text-white text-base flex items-center gap-1.5">
+                                User Guest <i data-lucide="check-circle-2" class="w-4 h-4 text-purple-400"></i>
+                            </h3>
+                            <p id="currentUserRoleDesc" class="text-xs text-purple-300/70">Akses Terbatas (Mode Gratis V3)</p>
+                        </div>
+                    </div>
+                    <span id="currentUserBadge" class="relative z-10 text-[10px] px-2.5 py-1 rounded-full bg-purple-900/60 border border-purple-500/40 text-purple-300 font-bold">
+                        FREE USER
+                    </span>
+                </div>
+
+                <!-- Owner Access Quick Bar (Owner Only) -->
+                <div id="ownerBannerBox" class="hidden glass-card-owner p-4 rounded-2xl border-amber-500/50 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150" 
+                             alt="Owner Avatar" 
+                             class="w-11 h-11 rounded-xl border border-amber-400 object-cover"
+                             onerror="this.src='https://placehold.co/150x150/78350f/ffffff?text=OWNER'">
+                        <div>
+                            <p class="text-xs font-black text-amber-300 flex items-center gap-1">
+                                <i data-lucide="crown" class="w-4 h-4 text-amber-400"></i> OWNER CONTROL V3
+                            </p>
+                            <p class="text-[10px] text-amber-200/70">Kelola User, Bot & Log Laporan</p>
+                        </div>
+                    </div>
+                    <button onclick="switchView('owner-panel')" class="px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-extrabold text-xs shadow-lg hover:brightness-110 flex items-center gap-1">
+                        Buka Panel
+                    </button>
+                </div>
+
+                <!-- Main Feature Options Grid -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="openFeature('bug-grup')" class="glass-card p-4 rounded-2xl flex flex-col items-start gap-3 text-left hover:border-purple-500 transition-all group">
+                        <div class="p-2.5 rounded-xl bg-purple-900/50 text-purple-400 group-hover:bg-purple-600 group-hover:text-white transition-all">
+                            <i data-lucide="users" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white text-sm">Bug Grup WA</h4>
+                            <p class="text-[11px] text-purple-300/60 mt-0.5">Auto-Report ke WhatsApp Bot</p>
+                        </div>
+                    </button>
+
+                    <button onclick="openFeature('bug-nomor')" class="glass-card p-4 rounded-2xl flex flex-col items-start gap-3 text-left hover:border-purple-500 transition-all group">
+                        <div class="p-2.5 rounded-xl bg-purple-900/50 text-purple-400 group-hover:bg-purple-600 group-hover:text-white transition-all">
+                            <i data-lucide="phone-off" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white text-sm">Bug Nomor Target</h4>
+                            <p class="text-[11px] text-purple-300/60 mt-0.5">9 Fitur Pengujian V3</p>
+                        </div>
+                    </button>
+
+                    <button onclick="openFeature('lacak-nomor')" class="glass-card p-4 rounded-2xl flex flex-col items-start gap-3 text-left hover:border-purple-500 transition-all group">
+                        <div class="p-2.5 rounded-xl bg-purple-900/50 text-purple-400 group-hover:bg-purple-600 group-hover:text-white transition-all">
+                            <i data-lucide="search" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-1">
+                                <h4 class="font-bold text-white text-sm">Lacak Nomor</h4>
+                                <span class="text-[9px] bg-blue-950 border border-blue-500/40 text-blue-300 px-1 rounded">VIP+</span>
+                            </div>
+                            <p class="text-[11px] text-purple-300/60 mt-0.5">Cek info detail nomor WA</p>
+                        </div>
+                    </button>
+
+                    <button onclick="openFeature('cek-keamanan')" class="glass-card p-4 rounded-2xl flex flex-col items-start gap-3 text-left hover:border-purple-500 transition-all group">
+                        <div class="p-2.5 rounded-xl bg-purple-900/50 text-purple-400 group-hover:bg-purple-600 group-hover:text-white transition-all">
+                            <i data-lucide="shield-check" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white text-sm">Cek Keamanan WA</h4>
+                            <p class="text-[11px] text-purple-300/60 mt-0.5">Deteksi penyadapan V3</p>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Web Banner Visual -->
+                <div class="glass-card rounded-2xl p-3.5 flex items-center gap-3 border-purple-500/30 overflow-hidden relative">
+                    <img src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=500" 
+                         alt="Cyberpunk Web Display" 
+                         class="w-20 h-20 rounded-xl object-cover border border-purple-500/40"
+                         onerror="this.src='https://placehold.co/200x200/1e1b4b/ffffff?text=V3+PANEL'">
+                    <div class="flex-1 space-y-1">
+                        <span class="text-[10px] font-bold text-purple-400 uppercase tracking-widest block">NALL V3 ENGINE</span>
+                        <h4 class="text-xs font-extrabold text-white">Sistem Pengiriman Auto Bot Report</h4>
+                        <p class="text-[10px] text-purple-300/70">Semua eksekusi fitur dikirim otomatis ke WhatsApp Bot secara aman.</p>
+                    </div>
+                </div>
+
+                <!-- Live User Activity Feed Preview -->
+                <div class="glass-card p-4 rounded-2xl space-y-2">
+                    <div class="flex justify-between items-center border-b border-purple-900/40 pb-2">
+                        <span class="text-xs font-bold text-purple-200 flex items-center gap-1.5">
+                            <i data-lucide="radio" class="w-3.5 h-3.5 text-emerald-400 animate-pulse"></i> Real-time Activity Feed
+                        </span>
+                        <span class="text-[10px] text-purple-400">Bot Connected</span>
+                    </div>
+                    <div id="liveFeedPreview" class="space-y-1.5 text-[11px]">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. BUG GRUP WHATSAPP -->
+            <section id="view-bug-grup" class="hidden space-y-4">
+                <div class="glass-card p-5 rounded-2xl text-center space-y-2">
+                    <div class="mx-auto w-14 h-14 rounded-2xl bg-purple-900/60 border border-purple-400/40 flex items-center justify-center text-purple-400">
+                        <i data-lucide="users" class="w-8 h-8"></i>
+                    </div>
+                    <h2 class="text-lg font-bold text-white">Bug Grup WhatsApp V3</h2>
+                    <p class="text-xs text-purple-300/70 max-w-xs mx-auto">
+                        Pilih mode pengujian bug grup WhatsApp target di bawah ini.
+                    </p>
+                </div>
+
+                <div class="glass-card p-4 rounded-2xl space-y-3">
+                    <label class="text-xs font-semibold text-purple-200">Pilih Mode Feature</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="selectGroupBugMode('FOR CLOSE (PRO)')" id="gmode-close" class="p-3 rounded-xl border border-purple-500 bg-purple-900/60 text-left hover:border-purple-500">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-white">FOR CLOSE (PRO)</span>
+                                <span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-900 text-purple-300 font-bold">PREMIUM</span>
+                            </div>
+                            <p class="text-[10px] text-purple-300/60 mt-1">Mode penutupan paksa tampilan grup</p>
+                        </button>
+
+                        <button onclick="selectGroupBugMode('BLANK (PRO)')" id="gmode-blank" class="p-3 rounded-xl border border-purple-800 bg-purple-950/60 text-left hover:border-purple-500">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-white">BLANK (PRO)</span>
+                                <span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-900 text-purple-300 font-bold">PREMIUM</span>
+                            </div>
+                            <p class="text-[10px] text-purple-300/60 mt-1">Mengosongkan deskripsi & obrolan</p>
+                        </button>
+                    </div>
+
+                    <div class="space-y-1.5 pt-2">
+                        <label class="text-xs font-semibold text-purple-200">Masukkan Link Grup Target</label>
+                        <input type="text" id="groupLinkInput" placeholder="https://chat.whatsapp.com/..." class="w-full px-4 py-3 rounded-xl bg-purple-950/60 border border-purple-800/50 text-white placeholder-purple-400/40 text-xs focus:outline-none focus:border-purple-500">
+                    </div>
+
+                    <button id="btnSendGroupBug" onclick="triggerAnimatedSend('grup')" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 font-extrabold text-white text-xs shadow-lg shadow-purple-900/50 hover:brightness-110 flex items-center justify-center gap-2 transition-all">
+                        <i data-lucide="send" class="w-4 h-4"></i> KIRIM LAPORAN KE BOT
+                    </button>
+                </div>
+            </section>
+
+            <!-- 4. BUG NOMOR TARGET (9 FEATURES) -->
+            <section id="view-bug-nomor" class="hidden space-y-4">
+                <div class="glass-card p-5 rounded-2xl text-center space-y-2">
+                    <div class="mx-auto w-14 h-14 rounded-2xl bg-purple-900/60 border border-purple-400/40 flex items-center justify-center text-purple-400">
+                        <i data-lucide="phone-off" class="w-8 h-8"></i>
+                    </div>
+                    <h2 class="text-lg font-bold text-white">Bug Nomor Target (9 Fitur V3)</h2>
+                    <p class="text-xs text-purple-300/70 max-w-xs mx-auto">
+                        Pilih opsi pengujian untuk nomor target WhatsApp.
+                    </p>
+                </div>
+
+                <div class="glass-card p-4 rounded-2xl space-y-3">
+                    <label class="text-xs font-semibold text-purple-200">Pilih Fitur Pengujian (9 Option)</label>
+                    <div class="grid grid-cols-1 gap-2 text-xs" id="bugNomorFeatureList">
+                        <!-- Rendered dynamically -->
+                    </div>
+
+                    <div class="space-y-1 pt-2">
+                        <label class="text-xs font-semibold text-purple-200">Masukkan Nomor Target</label>
+                        <div class="flex gap-2">
+                            <select id="targetCountryCode" class="px-3 py-3 rounded-xl bg-purple-950/60 border border-purple-800/50 text-purple-300 text-xs focus:outline-none">
+                                <option value="+62">+62 (ID)</option>
+                                <option value="+1">+1 (US)</option>
+                                <option value="+60">+60 (MY)</option>
+                            </select>
+                            <input type="number" id="targetNumberInput" placeholder="Contoh: 8123456789" class="flex-1 px-4 py-3 rounded-xl bg-purple-950/60 border border-purple-800/50 text-white placeholder-purple-400/40 text-xs focus:outline-none focus:border-purple-500">
+                        </div>
+                    </div>
+
+                    <button id="btnSendTargetBug" onclick="triggerAnimatedSend('nomor')" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 font-extrabold text-white text-xs shadow-lg shadow-purple-900/50 hover:brightness-110 flex items-center justify-center gap-2 transition-all">
+                        <i data-lucide="send" class="w-4 h-4"></i> KIRIM LAPORAN KE BOT
+                    </button>
+                </div>
+            </section>
+
+            <!-- 5. LACAK NOMOR -->
+            <section id="view-lacak-nomor" class="hidden space-y-4">
+                <div class="glass-card p-5 rounded-2xl text-center space-y-2">
+                    <div class="mx-auto w-14 h-14 rounded-2xl bg-blue-900/60 border border-blue-400/40 flex items-center justify-center text-blue-400">
+                        <i data-lucide="search" class="w-8 h-8"></i>
+                    </div>
+                    <h2 class="text-lg font-bold text-white">Lacak Nomor WA Target</h2>
+                    <span class="inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-950 border border-blue-500/40 text-blue-300">
+                        KHUSUS VIP+ / PREMIUM / OWNER
+                    </span>
+                    <p class="text-xs text-purple-300/70 max-w-xs mx-auto">
+                        Fitur informasi nomor hanya dapat digunakan sesuai izin & ketentuan privasi.
+                    </p>
+                </div>
+
+                <div class="glass-card p-4 rounded-2xl space-y-3">
+                    <div class="flex gap-2">
+                        <select id="lacakCountry" class="px-3 py-3 rounded-xl bg-purple-950/60 border border-purple-800/50 text-purple-300 text-xs focus:outline-none">
+                            <option value="+62">+62</option>
+                            <option value="+1">+1</option>
+                            <option value="+60">+60</option>
+                        </select>
+                        <input type="number" id="lacakInput" placeholder="Contoh: 8123456789" class="flex-1 px-4 py-3 rounded-xl bg-purple-950/60 border border-purple-800/50 text-white placeholder-purple-400/40 text-xs focus:outline-none focus:border-purple-500">
+                    </div>
+                    <button id="btnSendLacak" onclick="triggerAnimatedSend('lacak')" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 font-bold text-white text-xs shadow-lg hover:brightness-110 flex items-center justify-center gap-2">
+                        <i data-lucide="search" class="w-4 h-4"></i> KIRIM LAPORAN LACAK
+                    </button>
+                </div>
+
+                <div class="glass-card p-4 rounded-2xl space-y-2">
+                    <h4 class="text-xs font-bold text-white border-b border-purple-900/40 pb-2">Hasil Analisis Lacak</h4>
+                    <div class="space-y-2 text-xs text-purple-300/80 pt-1">
+                        <div class="flex justify-between"><span>Kode Negara:</span> <span id="resCode" class="font-semibold text-white">-</span></div>
+                        <div class="flex justify-between"><span>Operator Provider:</span> <span id="resOps" class="font-semibold text-white">-</span></div>
+                        <div class="flex justify-between"><span>Status Registrasi WA:</span> <span id="resStatus" class="font-semibold text-white">-</span></div>
+                        <div class="flex justify-between"><span>Tipe Akun:</span> <span id="resType" class="font-semibold text-white">-</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. OWNER PANEL - COMPLETE UPGRADE SUITE -->
+            <section id="view-owner-panel" class="hidden space-y-4">
+                <!-- Owner Profile Header Visual -->
+                <div class="glass-card-owner p-4 rounded-2xl border-amber-500/50 relative overflow-hidden">
+                    <div class="flex items-center gap-3">
+                        <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150" 
+                             alt="Owner Profile Picture" 
+                             class="w-14 h-14 rounded-2xl border-2 border-amber-400 object-cover shadow-lg"
+                             onerror="this.src='https://placehold.co/150x150/78350f/ffffff?text=OWNER'">
+                        <div>
+                            <div class="flex items-center gap-1.5">
+                                <h2 class="text-base font-black text-amber-300 tracking-wide">OWNER CONTROL V3</h2>
+                                <span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded font-bold">FULL ACCESS</span>
+                            </div>
+                            <p class="text-xs text-amber-200/80">Owner Account: <b class="text-amber-400">Molek_Vivo</b></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Counter Dashboard -->
+                <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div class="glass-card p-3 rounded-xl border-purple-500/30">
+                        <p class="text-purple-300 font-bold text-lg" id="statVipCount">5</p>
+                        <p class="text-[10px] text-purple-300/70">VIP Users</p>
+                    </div>
+                    <div class="glass-card p-3 rounded-xl border-blue-500/30">
+                        <p class="text-blue-300 font-bold text-lg" id="statPremiumCount">5</p>
+                        <p class="text-[10px] text-purple-300/70">Premium Users</p>
+                    </div>
+                    <div class="glass-card p-3 rounded-xl border-emerald-500/30">
+                        <p class="text-emerald-400 font-bold text-lg" id="statBotStatus">ONLINE</p>
+                        <p class="text-[10px] text-purple-300/70">Bot WhatsApp V3</p>
+                    </div>
+                </div>
+
+                <!-- Bot WhatsApp Connection Config -->
+                <div class="glass-card p-4 rounded-2xl space-y-3 border-emerald-500/30">
+                    <div class="flex items-center justify-between border-b border-purple-900/40 pb-2">
+                        <h4 class="text-xs font-bold text-white flex items-center gap-1.5">
+                            <i data-lucide="bot" class="w-4 h-4 text-emerald-400"></i> Pengaturan Koneksi Bot WhatsApp
+                        </h4>
+                        <span id="botConnBadge" class="text-[9px] bg-emerald-950 border border-emerald-500/40 text-emerald-300 px-2 py-0.5 rounded font-bold">TERHUBUNG</span>
+                    </div>
+
+                    <div class="space-y-2 text-xs">
+                        <div>
+                            <label class="text-[11px] text-purple-300">Target WhatsApp Admin Bot</label>
+                            <input type="text" id="ownerBotNumber" value="6283129970042" class="w-full mt-1 px-3 py-2 rounded-xl bg-purple-950/60 border border-purple-800 text-white font-mono-code text-xs">
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="toggleBotServerStatus()" id="btnToggleBot" class="flex-1 py-2 rounded-xl bg-amber-600/80 text-white font-bold text-[11px] hover:bg-amber-500">
+                                Toggle Status Bot (OFFLINE)
+                            </button>
+                            <button onclick="saveBotSettings()" class="flex-1 py-2 rounded-xl bg-emerald-600/80 text-white font-bold text-[11px] hover:bg-emerald-500">
+                                Simpan Setting Bot
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Management Section (FREE, VIP, PREMIUM) -->
+                <div class="glass-card p-4 rounded-2xl space-y-3">
+                    <div class="flex items-center justify-between border-b border-purple-900/40 pb-2">
+                        <h4 class="text-xs font-bold text-white flex items-center gap-1.5">
+                            <i data-lucide="users" class="w-4 h-4 text-purple-400"></i> Manajemen Pengguna Website
+                        </h4>
+                        <button onclick="openAddUserModal()" class="px-2.5 py-1 rounded-lg bg-purple-600 text-white font-bold text-[10px] hover:bg-purple-500">
+                            + Tambah Akun
+                        </button>
+                    </div>
+
+                    <div id="ownerUserList" class="space-y-2 text-xs max-h-60 overflow-y-auto">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Real-Time Auto-Report Logs & Activity -->
+                <div class="glass-card p-4 rounded-2xl space-y-3">
+                    <div class="flex items-center justify-between border-b border-purple-900/40 pb-2">
+                        <h4 class="text-xs font-bold text-white flex items-center gap-1.5">
+                            <i data-lucide="file-text" class="w-4 h-4 text-cyan-400"></i> Log Riwayat Auto-Report Bot
+                        </h4>
+                        <button onclick="clearBotLogs()" class="text-[10px] text-red-400 hover:underline">Clear Log</button>
+                    </div>
+
+                    <div id="ownerBotLogs" class="space-y-2 text-xs max-h-48 overflow-y-auto">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- System Controls & Security Audit -->
+                <div class="glass-card p-4 rounded-2xl space-y-2">
+                    <h4 class="text-xs font-bold text-white border-b border-purple-900/40 pb-2">Aksi Pengaturan & Sistem Owner</h4>
+                    <button onclick="confirmAction('Maintenance Mode', 'Aktifkan mode pemeliharaan website?', toggleMaintenance)" class="w-full py-2.5 rounded-xl bg-purple-950/60 border border-purple-800 text-left px-3 text-xs flex justify-between items-center text-purple-200 hover:bg-purple-900/50">
+                        <span>Status Sistem Maintenance</span>
+                        <i data-lucide="shield-alert" class="w-4 h-4 text-amber-400"></i>
+                    </button>
+                    <button onclick="confirmAction('Reset Log Activity', 'Hapus semua riwayat aktivitas user?', clearActivityLogs)" class="w-full py-2.5 rounded-xl bg-purple-950/60 border border-purple-800 text-left px-3 text-xs flex justify-between items-center text-purple-200 hover:bg-purple-900/50">
+                        <span>Reset Log Aktivitas Pengguna</span>
+                        <i data-lucide="rotate-ccw" class="w-4 h-4 text-purple-400"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- 7. FITUR TAB LIST -->
+            <section id="view-fitur" class="hidden space-y-4">
+                <h2 class="text-base font-bold text-white">Semua Fitur Website NALL PANEL V3</h2>
+                <div class="space-y-2">
+                    <button onclick="openFeature('bug-grup')" class="w-full glass-card p-3.5 rounded-2xl flex items-center justify-between text-left">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 rounded-xl bg-purple-900/50 text-purple-400"><i data-lucide="users" class="w-5 h-5"></i></div>
+                            <div>
+                                <h4 class="font-bold text-white text-xs">Bug Grup WA (For Close / Blank)</h4>
+                                <p class="text-[10px] text-purple-300/60">Pengujian grup WA target V3</p>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-purple-400"></i>
+                    </button>
+
+                    <button onclick="openFeature('bug-nomor')" class="w-full glass-card p-3.5 rounded-2xl flex items-center justify-between text-left">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 rounded-xl bg-purple-900/50 text-purple-400"><i data-lucide="phone-off" class="w-5 h-5"></i></div>
+                            <div>
+                                <h4 class="font-bold text-white text-xs">Bug Nomor Target (9 Features)</h4>
+                                <p class="text-[10px] text-purple-300/60">Delay, Crash UI, Freeze & iOS</p>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-purple-400"></i>
+                    </button>
+
+                    <button onclick="openFeature('lacak-nomor')" class="w-full glass-card p-3.5 rounded-2xl flex items-center justify-between text-left">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 rounded-xl bg-purple-900/50 text-purple-400"><i data-lucide="search" class="w-5 h-5"></i></div>
+                            <div>
+                                <h4 class="font-bold text-white text-xs">Lacak Nomor Target</h4>
+                                <p class="text-[10px] text-purple-300/60">Khusus VIP+ / Premium</p>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-purple-400"></i>
+                    </button>
+
+                    <button onclick="openFeature('cek-keamanan')" class="w-full glass-card p-3.5 rounded-2xl flex items-center justify-between text-left">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 rounded-xl bg-purple-900/50 text-purple-400"><i data-lucide="shield-check" class="w-5 h-5"></i></div>
+                            <div>
+                                <h4 class="font-bold text-white text-xs">Cek Keamanan Akun</h4>
+                                <p class="text-[10px] text-purple-300/60">Deteksi penyadapan WA</p>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-purple-400"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- 8. CEK KEAMANAN -->
+            <section id="view-cek-keamanan" class="hidden space-y-4">
+                <div class="glass-card p-5 rounded-2xl text-center space-y-2">
+                    <div class="mx-auto w-14 h-14 rounded-2xl bg-teal-900/40 border border-teal-400/40 flex items-center justify-center text-teal-400">
+                        <i data-lucide="shield-check" class="w-8 h-8"></i>
+                    </div>
+                    <h2 class="text-lg font-bold text-white">Cek Keamanan WhatsApp V3</h2>
+                    <p class="text-xs text-purple-300/70 max-w-xs mx-auto">
+                        Pemindaian enkripsi perangkat & deteksi sesi tak dikenal.
+                    </p>
+                    <button onclick="triggerAnimatedSend('keamanan')" class="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 font-bold text-white text-xs shadow-lg mt-3 hover:brightness-110 flex items-center justify-center gap-2">
+                        <i data-lucide="shield-alert" class="w-4 h-4"></i> MULAI SCAN KEAMANAN
+                    </button>
+                </div>
+            </section>
+
+            <!-- 9. RIWAYAT TAB -->
+            <section id="view-riwayat" class="hidden space-y-4">
+                <h3 class="text-xs font-bold text-white">Riwayat Auto-Report V3 Anda</h3>
+                <div class="space-y-2 text-xs" id="riwayatList">
+                    <div class="glass-card p-3 rounded-xl flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="activity" class="w-4 h-4 text-purple-400"></i>
+                            <div>
+                                <p class="font-bold text-white">Login Sesi V3 Berhasil</p>
+                                <p class="text-[10px] text-purple-300/60">Sistem Autentikasi Pengguna</p>
+                            </div>
+                        </div>
+                        <span class="text-[10px] text-purple-400/70">Baru Saja</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 10. PROFIL TAB -->
+            <section id="view-profil" class="hidden space-y-4">
+                <div class="glass-card p-4 rounded-2xl flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <img id="profileUserAvatar" 
+                             src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150" 
+                             alt="Profil Avatar" 
+                             class="w-12 h-12 rounded-full border border-purple-400/50 object-cover"
+                             onerror="this.src='https://placehold.co/150x150/4c1d95/ffffff?text=USER'">
+                        <div>
+                            <h3 id="profName" class="font-bold text-white text-sm">Free Guest</h3>
+                            <p id="profRole" class="text-xs text-purple-300/60">Tingkat: FREE USER</p>
+                        </div>
+                    </div>
+                    <button onclick="switchView('login')" class="px-2.5 py-1 rounded-full bg-red-950/80 text-red-300 text-[10px] font-bold border border-red-500/30">
+                        Ganti Akun
+                    </button>
+                </div>
+
+                <div class="space-y-2 text-xs">
+                    <button onclick="openAdminWA()" class="w-full glass-card p-3 rounded-xl flex items-center justify-between text-left">
+                        <span class="flex items-center gap-2 text-purple-200"><i data-lucide="message-square" class="w-4 h-4 text-emerald-400"></i> Hubungi Admin WhatsApp</span>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-purple-400"></i>
+                    </button>
+
+                    <button onclick="alertModal('NALL PANEL V3', 'Fitur Lengkap • Auto Bot WhatsApp Report • Owner Control Engine • V3 Dynamic Cyber Theme.')" class="w-full glass-card p-3 rounded-xl flex items-center justify-between text-left">
+                        <span class="flex items-center gap-2 text-purple-200"><i data-lucide="info" class="w-4 h-4 text-purple-400"></i> Informasi Versi V3</span>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-purple-400"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- 11. PENGATURAN TAB -->
+            <section id="view-pengaturan" class="hidden space-y-4">
+                <h3 class="text-xs font-bold text-white">Pengaturan Website V3</h3>
+                <div class="space-y-2 text-xs">
+                    <div class="flex items-center justify-between glass-card p-3 rounded-xl">
+                        <span class="text-purple-200">Enkripsi Auto-Report Bot</span>
+                        <span class="text-emerald-400 font-bold">V3 Safe AES-256</span>
+                    </div>
+                    <div class="flex items-center justify-between glass-card p-3 rounded-xl">
+                        <span class="text-purple-200">Koneksi Server WhatsApp Bot</span>
+                        <span id="settingBotStatusText" class="text-emerald-400 font-bold">Connected</span>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Animated Sending Payload Overlay Engine -->
+        <div id="sendingOverlay" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+            <div class="glass-card max-w-sm w-full p-6 rounded-3xl border-2 border-purple-500 animated-border space-y-4 text-center relative overflow-hidden shadow-2xl">
+                <!-- Glowing Aura FX -->
+                <div class="absolute -top-10 -left-10 w-32 h-32 bg-purple-600/30 rounded-full blur-2xl animate-pulse"></div>
+                <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-blue-600/30 rounded-full blur-2xl animate-pulse"></div>
+
+                <!-- Animated Particle Spinner -->
+                <div class="relative w-20 h-20 mx-auto flex items-center justify-center">
+                    <div class="w-20 h-20 rounded-full border-4 border-purple-500/20 border-t-purple-500 border-r-blue-500 animate-spin"></div>
+                    <div class="w-14 h-14 rounded-full border-4 border-blue-500/20 border-b-cyan-400 absolute animate-ping opacity-25"></div>
+                    <i data-lucide="bot" class="w-8 h-8 text-cyan-400 absolute pulse-glow-fx"></i>
+                </div>
+
+                <!-- Step Title -->
+                <div class="space-y-1">
+                    <h3 id="sendAnimStepTitle" class="font-black text-white text-sm tracking-wider uppercase font-mono-code text-cyan-300">
+                        MENGHUBUNGKAN KE SERVER...
+                    </h3>
+                    <p id="sendAnimStepSub" class="text-[11px] text-purple-300/80">Memulai enkripsi payload auto-report</p>
+                </div>
+
+                <!-- Live Auto-Report Payload Card Box -->
+                <div id="payloadCardBox" class="hidden text-left bg-purple-950/70 border border-purple-500/40 rounded-xl p-3 text-[11px] font-mono-code space-y-1 shadow-inner">
+                    <p class="text-purple-300 border-b border-purple-800/50 pb-1 font-bold text-[10px] text-center text-cyan-300">
+                        🤖 LAPORAN OTOMATIS BOT WHATSAPP
+                    </p>
+                    <p><span class="text-purple-400">👤 User ID:</span> <span id="pPayloadUser" class="text-white"></span></p>
+                    <p><span class="text-purple-400">📱 Target:</span> <span id="pPayloadTarget" class="text-yellow-300"></span></p>
+                    <p><span class="text-purple-400">⚙️ Model Fitur:</span> <span id="pPayloadModel" class="text-cyan-300"></span></p>
+                    <p><span class="text-purple-400">🕒 Waktu:</span> <span id="pPayloadTime" class="text-slate-300"></span></p>
+                    <p><span class="text-purple-400">📊 Status:</span> <span id="pPayloadStatus" class="text-emerald-400 font-bold">MENUNGGU</span></p>
+                </div>
+
+                <div class="pt-2 flex flex-col gap-2">
+                    <button id="btnOpenWaDirect" onclick="redirectToWaBot()" class="hidden w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-lg flex items-center justify-center gap-2">
+                        <i data-lucide="message-square" class="w-4 h-4"></i> KIRIM SEKARANG KE BOT WA
+                    </button>
+                    <button id="btnCloseOverlay" onclick="closeSendOverlay()" class="hidden w-full py-2.5 rounded-xl bg-purple-950 border border-purple-800 hover:bg-purple-900 text-purple-300 font-bold text-xs shadow-lg">
+                        Tutup & Kembali
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add User Modal (Owner Panel) -->
+        <div id="addUserModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div class="glass-card max-w-xs w-full p-5 rounded-2xl border-purple-500/50 space-y-3">
+                <h3 class="font-bold text-white text-sm text-center">Tambah User Baru V3</h3>
+                <input type="text" id="newUsername" placeholder="Username" class="w-full px-3 py-2 rounded-xl bg-purple-950/60 border border-purple-800 text-white text-xs">
+                <input type="password" id="newPassword" placeholder="Password" class="w-full px-3 py-2 rounded-xl bg-purple-950/60 border border-purple-800 text-white text-xs">
+                <select id="newRole" class="w-full px-3 py-2 rounded-xl bg-purple-950/60 border border-purple-800 text-purple-200 text-xs">
+                    <option value="VIP">💎 VIP USER</option>
+                    <option value="PREMIUM">🔥 PREMIUM USER</option>
+                    <option value="FREE">👤 FREE USER</option>
+                </select>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="closeAddUserModal()" class="flex-1 py-2 rounded-xl bg-purple-950 text-purple-300 text-xs">Batal</button>
+                    <button onclick="saveNewUser()" class="flex-1 py-2 rounded-xl bg-purple-600 text-white font-bold text-xs">Simpan</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirm Action Modal -->
+        <div id="confirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+            <div class="glass-card max-w-xs w-full p-5 rounded-2xl border-amber-500/50 space-y-3 text-center">
+                <i data-lucide="alert-triangle" class="w-10 h-10 text-amber-400 mx-auto"></i>
+                <h3 id="confirmTitle" class="font-bold text-white text-sm">Konfirmasi Tindakan</h3>
+                <p id="confirmBody" class="text-xs text-purple-200"></p>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="closeConfirmModal()" class="flex-1 py-2 rounded-xl bg-purple-950 text-purple-300 text-xs">Batal</button>
+                    <button id="btnConfirmExecute" class="flex-1 py-2 rounded-xl bg-amber-600 text-white font-bold text-xs">Eksekusi</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Generic Info Modal -->
+        <div id="customModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div class="glass-card max-w-xs w-full p-5 rounded-2xl border-purple-500/50 space-y-4 text-center">
+                <h3 id="modalTitle" class="font-bold text-white text-base">Info</h3>
+                <p id="modalBody" class="text-xs text-purple-200 leading-relaxed"></p>
+                <button onclick="closeModal()" class="w-full py-2.5 rounded-xl bg-purple-600 text-white font-bold text-xs hover:bg-purple-500">
+                    Tutup
+                </button>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-[#06030e]/95 backdrop-blur-md border-t border-purple-900/40 px-3 py-2 flex justify-around items-center z-30">
+            <button onclick="switchTab('beranda')" id="tab-beranda" class="flex flex-col items-center gap-1 text-purple-400 font-bold transition-colors">
+                <i data-lucide="home" class="w-5 h-5"></i>
+                <span class="text-[10px] font-medium">Beranda</span>
+            </button>
+
+            <button onclick="switchTab('fitur')" id="tab-fitur" class="flex flex-col items-center gap-1 text-purple-300/50 hover:text-purple-300 transition-colors">
+                <i data-lucide="grid" class="w-5 h-5"></i>
+                <span class="text-[10px] font-medium">Fitur</span>
+            </button>
+
+            <button onclick="switchTab('riwayat')" id="tab-riwayat" class="flex flex-col items-center gap-1 text-purple-300/50 hover:text-purple-300 transition-colors">
+                <i data-lucide="history" class="w-5 h-5"></i>
+                <span class="text-[10px] font-medium">Riwayat</span>
+            </button>
+
+            <button onclick="switchTab('profil')" id="tab-profil" class="flex flex-col items-center gap-1 text-purple-300/50 hover:text-purple-300 transition-colors">
+                <i data-lucide="user" class="w-5 h-5"></i>
+                <span class="text-[10px] font-medium">Profil</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Application Script V3 -->
+    <script>
+        // Database User Accounts (Includes Custom Profiles & Badges)
+        let USER_DATABASE = [
+            { id: "USR-001", username: "Zynox_482", pass: "K7#mQ92vLp", role: "VIP", label: "💎 VIP USER", activeDays: 30, blocked: false, avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150" },
+            { id: "USR-002", username: "RaveX_731", pass: "T4@zN86kRw", role: "VIP", label: "💎 VIP USER", activeDays: 14, blocked: false, avatar: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150" },
+            { id: "USR-003", username: "Kyro_596", pass: "B9!pL37xVm", role: "VIP", label: "💎 VIP USER", activeDays: 60, blocked: false, avatar: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=150" },
+            { id: "USR-004", username: "Vexora_214", pass: "H6@wR82nQz", role: "VIP", label: "💎 VIP USER", activeDays: 7, blocked: false, avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150" },
+            { id: "USR-005", username: "Dravix_863", pass: "M3#yT95kXa", role: "VIP", label: "💎 VIP USER", activeDays: 45, blocked: false, avatar: "https://images.unsplash.com/photo-1628157582853-a796fa650a6a?w=150" },
+            { id: "USR-006", username: "VantaX_901", pass: "Qx7@Lm92#Vp", role: "PREMIUM", label: "🔥 PREMIUM USER", activeDays: 90, blocked: false, avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" },
+            { id: "USR-007", username: "Zyphron_482", pass: "K8!Rw35@Nz", role: "PREMIUM", label: "🔥 PREMIUM USER", activeDays: 30, blocked: false, avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150" },
+            { id: "USR-008", username: "AetherX_763", pass: "T9#Kv42!Ym", role: "PREMIUM", label: "🔥 PREMIUM USER", activeDays: 120, blocked: false, avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150" },
+            { id: "USR-009", username: "Noctivex_215", pass: "P6@Xz81#Wr", role: "PREMIUM", label: "🔥 PREMIUM USER", activeDays: 15, blocked: false, avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150" },
+            { id: "USR-010", username: "Veltrix_694", pass: "M4!Qn73@Lp", role: "PREMIUM", label: "🔥 PREMIUM USER", activeDays: 30, blocked: false, avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" },
+            { id: "USR-000", username: "Molek_Vivo", pass: "Owner@X92pL7", role: "OWNER", label: "👑 OWNER", activeDays: 999, blocked: false, avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150" }
+        ];
+
+        // 9 Bug Target Options
+        const BUG_NOMOR_FEATURES = [
+            { id: 1, name: "DELAY HIGH", level: "FREE", desc: "Penundaan respon standar V3" },
+            { id: 2, name: "DELAY HARD (PRO)", level: "PREMIUM", desc: "Penundaan beban tinggi server" },
+            { id: 3, name: "FOR CLOSE (PRO)", level: "PREMIUM", desc: "Paksa keluar tampilan aplikasi" },
+            { id: 4, name: "CRASH UI (PRO)", level: "PREMIUM", desc: "Menghentikan rendering UI WA" },
+            { id: 5, name: "FREEZE (PRO)", level: "PREMIUM", desc: "Pembekuan obrolan sementara" },
+            { id: 6, name: "FREEZE UI (PRO)", level: "PREMIUM", desc: "Pembekuan antarmuka penuh" },
+            { id: 7, name: "BLANK (PRO)", level: "PREMIUM", desc: "Tampilan obrolan menjadi kosong" },
+            { id: 8, name: "LOCK CHAT (PRO)", level: "PREMIUM", desc: "Mengunci obrolan spesifik" },
+            { id: 9, name: "CRASH IOS (PRO)", level: "PREMIUM", desc: "Payload khusus perangkat iOS" }
+        ];
+
+        // System Global State
+        let currentUser = {
+            id: "GUEST-001",
+            username: "Guest User",
+            role: "FREE",
+            label: "👤 FREE USER",
+            avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"
+        };
+        let botOnline = true;
+        let selectedBugNomorFeature = 1;
+        let selectedGroupBugMode = 'FOR CLOSE (PRO)';
+        let isSendingPayload = false;
+        let botLogsList = [];
+        let activityLogsList = [];
+
+        // BOT BUG PHONE NUMBER CONFIG
+        let BOT_PHONE_NUMBER = "6283129970042"; 
+        let currentPayloadMessage = "";
+
+        // Canvas Particle FX Setup
+        const canvas = document.getElementById('auraCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.radius = Math.random() * 2 + 0.8;
+                this.color = Math.random() > 0.5 ? '#a855f7' : '#3b82f6';
+                this.vx = (Math.random() - 0.5) * 0.4;
+                this.vy = (Math.random() - 0.5) * 0.4;
+                this.alpha = Math.random() * 0.6 + 0.2;
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.alpha;
+                ctx.fill();
+            }
+        }
+        for (let i = 0; i < 45; i++) particles.push(new Particle());
+        function animateAura() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animateAura);
+        }
+
+        // Initialize Page
+        window.onload = function() {
+            lucide.createIcons();
+            animateAura();
+            renderBugNomorList();
+            renderOwnerUserList();
+            renderLiveActivityFeed();
+            switchView('login');
+        };
+
+        // Navigation Controller
+        function switchView(viewId) {
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            const target = document.getElementById(`view-${viewId}`);
+            if (target) target.classList.remove('hidden');
+
+            const backBtn = document.getElementById('backBtn');
+            if (viewId === 'login' || viewId === 'beranda') {
+                backBtn.classList.add('hidden');
+            } else {
+                backBtn.classList.remove('hidden');
+            }
+
+            document.getElementById('appContent').scrollTop = 0;
+            lucide.createIcons();
+        }
+
+        document.getElementById('backBtn').addEventListener('click', () => switchTab('beranda'));
+
+        function switchTab(tabId) {
+            switchView(tabId);
+            const tabs = ['beranda', 'fitur', 'riwayat', 'profil'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                if (btn) {
+                    btn.className = (t === tabId) 
+                        ? "flex flex-col items-center gap-1 text-purple-400 font-bold" 
+                        : "flex flex-col items-center gap-1 text-purple-300/50 hover:text-purple-300";
+                }
+            });
+        }
+
+        function openFeature(featureId) {
+            switchView(featureId);
+        }
+
+        // Login Handler
+        function handleLogin() {
+            const u = document.getElementById('loginUsername').value.trim();
+            const p = document.getElementById('loginPassword').value.trim();
+
+            if (!u || !p) {
+                alertModal("Peringatan Login", "Masukkan ID Username dan Password akun Anda!");
+                return;
+            }
+
+            const match = USER_DATABASE.find(user => user.username === u && user.pass === p);
+
+            if (match) {
+                if (match.blocked) {
+                    alertModal("Akses Ditolak", "Akun ini telah diblokir oleh Owner. Hubungi admin!");
+                    return;
+                }
+                currentUser = {
+                    id: match.id,
+                    username: match.username,
+                    role: match.role,
+                    label: match.label,
+                    avatar: match.avatar
+                };
+                updateUserUI();
+                addActivityLog(`Login berhasil sebagai ${currentUser.label}`);
+                alertModal("Login Berhasil V3", `Selamat datang kembali, ${currentUser.username}!`);
+                switchTab('beranda');
+            } else {
+                alertModal("Login Gagal", "Username atau Password yang Anda masukkan tidak terdaftar!");
+            }
+        }
+
+        function loginAsGuest() {
+            currentUser = {
+                id: "GUEST-999",
+                username: "Guest User",
+                role: "FREE",
+                label: "👤 FREE USER",
+                avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"
+            };
+            updateUserUI();
+            addActivityLog("Login Sesi Free Guest");
+            switchTab('beranda');
+        }
+
+        function fillAuth(u, p) {
+            document.getElementById('loginUsername').value = u;
+            document.getElementById('loginPassword').value = p;
+        }
+
+        function updateUserUI() {
+            document.getElementById('currentUserName').innerText = currentUser.username;
+            document.getElementById('currentUserBadge').innerText = currentUser.label;
+            document.getElementById('profName').innerText = currentUser.username;
+            document.getElementById('profRole').innerText = `Tingkat: ${currentUser.label}`;
+            
+            document.getElementById('userAvatarImg').src = currentUser.avatar;
+            document.getElementById('profileUserAvatar').src = currentUser.avatar;
+
+            const roleDesc = document.getElementById('currentUserRoleDesc');
+            if (currentUser.role === 'OWNER') {
+                roleDesc.innerText = "Akses Penuh Owner Control Suite V3";
+                document.getElementById('ownerBannerBox').classList.remove('hidden');
+            } else if (currentUser.role === 'VIP' || currentUser.role === 'PREMIUM') {
+                roleDesc.innerText = "Akses Auto-Report & Fitur VIP Aktif";
+                document.getElementById('ownerBannerBox').classList.add('hidden');
+            } else {
+                roleDesc.innerText = "Akses Terbatas (Mode Gratis V3)";
+                document.getElementById('ownerBannerBox').classList.add('hidden');
+            }
+        }
+
+        // Render Bug Target 9 Options
+        function renderBugNomorList() {
+            const container = document.getElementById('bugNomorFeatureList');
+            container.innerHTML = BUG_NOMOR_FEATURES.map(feat => {
+                const isSelected = feat.id === selectedBugNomorFeature;
+                const activeClass = isSelected ? 'border-purple-500 bg-purple-900/60' : 'border-purple-800 bg-purple-950/60';
+                return `
+                    <div onclick="selectBugNomorFeature(${feat.id})" class="p-3 rounded-xl border ${activeClass} cursor-pointer hover:border-purple-500 transition-all flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-white">${feat.name}</span>
+                                <span class="text-[9px] px-1.5 py-0.2 rounded ${feat.level === 'FREE' ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30' : 'bg-purple-950 text-purple-300 border border-purple-500/30'}">${feat.level}</span>
+                            </div>
+                            <p class="text-[10px] text-purple-300/60 mt-0.5">${feat.desc}</p>
+                        </div>
+                        <div class="w-4 h-4 rounded-full border ${isSelected ? 'border-purple-400 bg-purple-500' : 'border-purple-700'} flex items-center justify-center">
+                            ${isSelected ? '<div class="w-1.5 h-1.5 rounded-full bg-white"></div>' : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectBugNomorFeature(id) {
+            selectedBugNomorFeature = id;
+            renderBugNomorList();
+        }
+
+        function selectGroupBugMode(mode) {
+            selectedGroupBugMode = mode;
+            document.getElementById('gmode-close').className = mode.includes('CLOSE') ? 'p-3 rounded-xl border border-purple-500 bg-purple-900/60 text-left hover:border-purple-500' : 'p-3 rounded-xl border border-purple-800 bg-purple-950/60 text-left hover:border-purple-500';
+            document.getElementById('gmode-blank').className = mode.includes('BLANK') ? 'p-3 rounded-xl border border-purple-500 bg-purple-900/60 text-left hover:border-purple-500' : 'p-3 rounded-xl border border-purple-800 bg-purple-950/60 text-left hover:border-purple-500';
+        }
+
+        // Animated Payload Send Controller V3
+        function triggerAnimatedSend(type) {
+            if (isSendingPayload) return;
+
+            let targetStr = "";
+            let modelStr = "";
+
+            if (type === 'grup') {
+                targetStr = document.getElementById('groupLinkInput').value.trim();
+                modelStr = `BUG GRUP (${selectedGroupBugMode})`;
+                if (!targetStr) { alertModal("Input Kosong", "Masukkan link grup WhatsApp target!"); return; }
+                if (currentUser.role === 'FREE') { alertModal("Akses Terbatas", "Bug Grup khusus pengguna VIP / PREMIUM / OWNER!"); return; }
+            } else if (type === 'nomor') {
+                const country = document.getElementById('targetCountryCode').value;
+                const num = document.getElementById('targetNumberInput').value.trim();
+                if (!num) { alertModal("Input Kosong", "Masukkan nomor target WhatsApp!"); return; }
+                targetStr = country + num;
+                const feat = BUG_NOMOR_FEATURES.find(f => f.id === selectedBugNomorFeature);
+                modelStr = feat ? feat.name : "BUG NOMOR";
+                if (feat && feat.level !== 'FREE' && currentUser.role === 'FREE') {
+                    alertModal("Akses Terbatas", `Fitur ${feat.name} memerlukan akun VIP/PREMIUM.`); return;
+                }
+            } else if (type === 'lacak') {
+                const country = document.getElementById('lacakCountry').value;
+                const num = document.getElementById('lacakInput').value.trim();
+                if (!num) { alertModal("Input Kosong", "Masukkan nomor target lacak!"); return; }
+                targetStr = country + num;
+                modelStr = "LACAK DETAIL NOMOR";
+                if (currentUser.role === 'FREE') { alertModal("Akses Terbatas", "Fitur Lacak khusus VIP+ / PREMIUM."); return; }
+            } else if (type === 'keamanan') {
+                targetStr = currentUser.username;
+                modelStr = "SCAN KEAMANAN AKUN";
+            }
+
+            // Lock controls & show overlay animation
+            isSendingPayload = true;
+            const overlay = document.getElementById('sendingOverlay');
+            const titleEl = document.getElementById('sendAnimStepTitle');
+            const subEl = document.getElementById('sendAnimStepSub');
+            const cardBox = document.getElementById('payloadCardBox');
+            const btnClose = document.getElementById('btnCloseOverlay');
+            const btnOpenWa = document.getElementById('btnOpenWaDirect');
+
+            overlay.classList.remove('hidden');
+            cardBox.classList.add('hidden');
+            btnClose.classList.add('hidden');
+            btnOpenWa.classList.add('hidden');
+
+            const nowTime = new Date().toLocaleTimeString('id-ID', { hour12: false });
+            document.getElementById('pPayloadUser').innerText = `${currentUser.username} (${currentUser.role})`;
+            document.getElementById('pPayloadTarget').innerText = targetStr;
+            document.getElementById('pPayloadModel').innerText = modelStr;
+            document.getElementById('pPayloadTime').innerText = nowTime;
+            document.getElementById('pPayloadStatus').innerText = "PROSES ENKRIPSI";
+            document.getElementById('pPayloadStatus').className = "text-yellow-400 font-bold";
+
+            // Format message payload for WhatsApp Bot
+            currentPayloadMessage = `*🤖 LAPORAN BUG AUTOMATION NALL PANEL V3*\n\n` +
+                `👤 *User ID:* ${currentUser.username} (${currentUser.role})\n` +
+                `⚙️ *Fitur / Model:* ${modelStr}\n` +
+                `🎯 *Target:* ${targetStr}\n` +
+                `🕒 *Waktu Eksekusi:* ${nowTime}\n\n` +
+                `Mohon segera diproses oleh Bot WhatsApp!`;
+
+            const steps = [
+                { t: "1. MENGHUBUNGKAN KE SERVER...", s: "Memverifikasi IP & Enkripsi V3 Handshake", delay: 800 },
+                { t: "2. MEMVALIDASI STATUS USER...", s: `Memeriksa Izin Akses ${currentUser.label}`, delay: 1600 },
+                { t: "3. MEMPROSES PERMINTAAN...", s: "Menyiapkan Buffer Payload Auto-Report", delay: 2400 },
+                { t: "4. MENGIRIM LAPORAN KE BOT...", s: "Mengarahkan Payload Ke WhatsApp Bot", delay: 3200 },
+                { t: "5. MENUNGGU RESPONS SERVER...", s: "Sinkronisasi Konfirmasi Server Bot", delay: 4000 }
+            ];
+
+            steps.forEach(step => {
+                setTimeout(() => {
+                    titleEl.innerText = step.t;
+                    subEl.innerText = step.s;
+                }, step.delay);
+            });
+
+            // Final Result Check
+            setTimeout(() => {
+                cardBox.classList.remove('hidden');
+                if (botOnline) {
+                    titleEl.innerText = "✅ LAPORAN TERBENTUK!";
+                    titleEl.className = "font-black text-emerald-400 text-sm tracking-wider font-mono-code";
+                    subEl.innerText = "Mengalihkan otomatis ke WhatsApp Bot...";
+                    document.getElementById('pPayloadStatus').innerText = "SIAP DIKIRIM SEKARANG";
+                    document.getElementById('pPayloadStatus').className = "text-emerald-400 font-bold";
+
+                    // Log to Bot Report Engine
+                    const reportData = {
+                        user: currentUser.username,
+                        role: currentUser.role,
+                        target: targetStr,
+                        model: modelStr,
+                        time: nowTime,
+                        status: "BERHASIL"
+                    };
+                    botLogsList.unshift(reportData);
+                    addActivityLog(`Eksekusi ${modelStr} -> ${targetStr}`);
+                    renderOwnerBotLogs();
+                    renderLiveActivityFeed();
+
+                    btnOpenWa.classList.remove('hidden');
+
+                    // Auto Redirect to WhatsApp Bot
+                    setTimeout(() => {
+                        redirectToWaBot();
+                    }, 1200);
+
+                } else {
+                    titleEl.innerText = "❌ PENGIRIMAN GAGAL — COBA LAGI";
+                    titleEl.className = "font-black text-red-400 text-sm tracking-wider font-mono-code";
+                    subEl.innerText = "Koneksi Bot WhatsApp sedang OFFLINE / Terputus.";
+                    document.getElementById('pPayloadStatus').innerText = "GAGAL (BOT OFFLINE)";
+                    document.getElementById('pPayloadStatus').className = "text-red-400 font-bold";
+                }
+                btnClose.classList.remove('hidden');
+                isSendingPayload = false;
+            }, 4800);
+        }
+
+        function redirectToWaBot() {
+            if (!currentPayloadMessage) return;
+            const targetBot = document.getElementById('ownerBotNumber').value.trim() || BOT_PHONE_NUMBER;
+            const waUrl = `https://wa.me/${targetBot}?text=${encodeURIComponent(currentPayloadMessage)}`;
+            window.open(waUrl, '_blank');
+        }
+
+        function closeSendOverlay() {
+            document.getElementById('sendingOverlay').classList.add('hidden');
+        }
+
+        // Live Feed Updates
+        function renderLiveActivityFeed() {
+            const feed = document.getElementById('liveFeedPreview');
+            if (activityLogsList.length === 0) {
+                feed.innerHTML = `
+                    <div class="text-purple-300/60 italic text-[10px]">
+                        Belum ada aktivitas laporan baru sesi ini.
+                    </div>
+                `;
+                return;
+            }
+            feed.innerHTML = activityLogsList.slice(0, 3).map(act => `
+                <div class="flex items-center justify-between bg-purple-950/40 p-2 rounded-lg border border-purple-800/30">
+                    <span class="text-purple-200 font-medium">${act.text}</span>
+                    <span class="text-[9px] text-purple-400/70 font-mono-code">${act.time}</span>
+                </div>
+            `).join('');
+        }
+
+        function addActivityLog(text) {
+            const now = new Date().toLocaleTimeString('id-ID', { hour12: false });
+            activityLogsList.unshift({ text, time: now });
+            renderLiveActivityFeed();
+
+            const container = document.getElementById('riwayatList');
+            if (container) {
+                const item = document.createElement('div');
+                item.className = "glass-card p-3 rounded-xl flex items-center justify-between";
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="zap" class="w-4 h-4 text-purple-400"></i>
+                        <div>
+                            <p class="font-bold text-white">${text}</p>
+                            <p class="text-[10px] text-purple-300/60">Auto-Report Transaksi</p>
+                        </div>
+                    </div>
+                    <span class="text-[10px] text-purple-400/70">${now}</span>
+                `;
+                container.prepend(item);
+                lucide.createIcons();
+            }
+        }
+
+        // OWNER PANEL CONTROLLERS
+        function renderOwnerUserList() {
+            const container = document.getElementById('ownerUserList');
+            if (!container) return;
+
+            let vipCount = 0, premiumCount = 0;
+            USER_DATABASE.forEach(u => {
+                if (u.role === 'VIP') vipCount++;
+                if (u.role === 'PREMIUM') premiumCount++;
+            });
+            document.getElementById('statVipCount').innerText = vipCount;
+            document.getElementById('statPremiumCount').innerText = premiumCount;
+
+            container.innerHTML = USER_DATABASE.map(u => `
+                <div class="p-2.5 rounded-xl bg-purple-950/50 border border-purple-800/40 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <img src="${u.avatar}" class="w-8 h-8 rounded-full object-cover border border-purple-500/30" onerror="this.src='https://placehold.co/100x100/4c1d95/ffffff?text=USER'">
+                        <div>
+                            <p class="font-bold text-white flex items-center gap-1">
+                                ${u.username} <span class="text-[9px] text-purple-300">(${u.role})</span>
+                            </p>
+                            <p class="text-[10px] text-purple-300/60">Aktif: ${u.activeDays} Hari | Status: ${u.blocked ? '🔴 BLOKIR' : '🟢 AKTIF'}</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-1">
+                        <button onclick="extendUserDuration('${u.id}')" class="px-2 py-1 rounded bg-blue-600/80 text-white font-bold text-[9px] hover:bg-blue-500">+30H</button>
+                        <button onclick="toggleBlockUser('${u.id}')" class="px-2 py-1 rounded ${u.blocked ? 'bg-emerald-600' : 'bg-red-600'} text-white font-bold text-[9px]">
+                            ${u.blocked ? 'Unblock' : 'Blokir'}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderOwnerBotLogs() {
+            const container = document.getElementById('ownerBotLogs');
+            if (!container) return;
+            if (botLogsList.length === 0) {
+                container.innerHTML = `<p class="text-purple-300/50 text-[10px] italic">Belum ada log auto-report terbaru.</p>`;
+                return;
+            }
+            container.innerHTML = botLogsList.map(log => `
+                <div class="p-2 rounded-lg bg-purple-950/60 border border-purple-800/40 text-[10px] font-mono-code space-y-0.5">
+                    <div class="flex justify-between font-bold">
+                        <span class="text-cyan-300">🤖 ${log.user} (${log.role})</span>
+                        <span class="text-emerald-400">${log.status}</span>
+                    </div>
+                    <p class="text-purple-200">Target: ${log.target} | Fitur: ${log.model}</p>
+                    <p class="text-purple-400/60 text-[9px]">Waktu: ${log.time}</p>
+                </div>
+            `).join('');
+        }
+
+        function extendUserDuration(userId) {
+            const u = USER_DATABASE.find(x => x.id === userId);
+            if (u) {
+                u.activeDays += 30;
+                renderOwnerUserList();
+                alertModal("Durasi Diperpanjang", `Masa aktif akun ${u.username} bertambah 30 hari.`);
+            }
+        }
+
+        function toggleBlockUser(userId) {
+            const u = USER_DATABASE.find(x => x.id === userId);
+            if (u) {
+                u.blocked = !u.blocked;
+                renderOwnerUserList();
+                alertModal("Status Diperbarui", `Akun ${u.username} sekarang status: ${u.blocked ? 'DIBLOKIR' : 'AKTIF'}.`);
+            }
+        }
+
+        function openAddUserModal() {
+            document.getElementById('addUserModal').classList.remove('hidden');
+        }
+        function closeAddUserModal() {
+            document.getElementById('addUserModal').classList.add('hidden');
+        }
+
+        function saveNewUser() {
+            const un = document.getElementById('newUsername').value.trim();
+            const pw = document.getElementById('newPassword').value.trim();
+            const rl = document.getElementById('newRole').value;
+
+            if (!un || !pw) {
+                alertModal("Form Kosong", "Isi username dan password akun baru!");
+                return;
+            }
+
+            const newObj = {
+                id: `USR-0${USER_DATABASE.length + 1}`,
+                username: un,
+                pass: pw,
+                role: rl,
+                label: rl === 'VIP' ? '💎 VIP USER' : rl === 'PREMIUM' ? '🔥 PREMIUM USER' : '👤 FREE USER',
+                activeDays: 30,
+                blocked: false,
+                avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"
+            };
+
+            USER_DATABASE.push(newObj);
+            renderOwnerUserList();
+            closeAddUserModal();
+            alertModal("User Ditambahkan", `Akun baru ${un} (${rl}) berhasil disimpan!`);
+        }
+
+        function toggleBotServerStatus() {
+            botOnline = !botOnline;
+            const text = botOnline ? "ONLINE" : "OFFLINE";
+            document.getElementById('statBotStatus').innerText = text;
+            document.getElementById('botStatusText').innerText = `BOT: ${text}`;
+            document.getElementById('settingBotStatusText').innerText = botOnline ? "Connected" : "Disconnected";
+            
+            const ind = document.getElementById('botStatusIndicator');
+            if (botOnline) {
+                ind.className = "flex items-center gap-1.5 bg-emerald-950/80 border border-emerald-500/40 px-2.5 py-1 rounded-full text-[10px] font-bold text-emerald-400";
+            } else {
+                ind.className = "flex items-center gap-1.5 bg-red-950/80 border border-red-500/40 px-2.5 py-1 rounded-full text-[10px] font-bold text-red-400";
+            }
+            alertModal("Status Bot Server", `Server WhatsApp Bot kini: ${text}`);
+        }
+
+        function saveBotSettings() {
+            const num = document.getElementById('ownerBotNumber').value.trim();
+            BOT_PHONE_NUMBER = num;
+            alertModal("Pengaturan Tersimpan", `Nomor WhatsApp Admin Bot diperbarui ke: ${num}`);
+        }
+
+        function clearBotLogs() {
+            botLogsList = [];
+            renderOwnerBotLogs();
+        }
+
+        // Owner Confirmation System
+        let pendingAction = null;
+        function confirmAction(title, bodyText, actionFn) {
+            document.getElementById('confirmTitle').innerText = title;
+            document.getElementById('confirmBody').innerText = bodyText;
+            pendingAction = actionFn;
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.add('hidden');
+            pendingAction = null;
+        }
+
+        document.getElementById('btnConfirmExecute').addEventListener('click', () => {
+            if (pendingAction) pendingAction();
+            closeConfirmModal();
+        });
+
+        function toggleMaintenance() {
+            alertModal("Maintenance Mode", "Status maintenance server telah disesuaikan oleh Owner.");
+        }
+
+        function clearActivityLogs() {
+            activityLogsList = [];
+            renderLiveActivityFeed();
+            alertModal("Reset Selesai", "Semua riwayat log aktivitas telah dibersihkan.");
+        }
+
+        // Generic Modal Helpers
+        function alertModal(title, text) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalBody').innerText = text;
+            document.getElementById('customModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('customModal').classList.add('hidden');
+        }
+
+        function openAdminWA(msg) {
+            const text = msg ? encodeURIComponent(msg) : encodeURIComponent("Halo Admin NALL V3, saya butuh panduan/aktivasi akun.");
+            window.open(`https://wa.me/${BOT_PHONE_NUMBER}?text=${text}`, '_blank');
+        }
+    </script>
+</body>
+</html>
